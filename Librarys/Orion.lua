@@ -2276,5 +2276,9 @@ function L_10_:Destroy()
     L_9_:AddItem(L_12_, 0)
 end
 
+function L_10_:Toggle()
+    L_12_.Enabled = not L_12_.Enabled
+end
+
 
 return L_10_
