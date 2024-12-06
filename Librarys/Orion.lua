@@ -1723,4 +1723,8 @@ function OrionLib:Destroy()
 	Orion:Destroy()
 end
 
+function OrionLib:ToggleUi
+	Orion.Enabled = not Orion.Enabled
+end
+
 return OrionLib
