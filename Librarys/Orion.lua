@@ -1,4 +1,3 @@
-
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
@@ -96,41 +95,35 @@ task.spawn(function()
 	end
 end)
 
-local function MakeDraggable(DragPoint, Main)
-    pcall(function()
-        local Dragging, DragInput, MousePos, FramePos = false
+local function AddDraggingFunctionality(DragPoint, Main)
+	pcall(function()
+		local Dragging, DragInput, MousePos, FramePos = false
+		DragPoint.InputBegan:Connect(function(Input)
+			if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+				Dragging = true
+				MousePos = Input.Position
+				FramePos = Main.Position
 
-        AddConnection(DragPoint.InputBegan, function(Input)
-            if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
-                Dragging = true
-                MousePos = Input.Position
-                FramePos = Main.Position
-
-                Input.Changed:Connect(function()
-                    if Input.UserInputState == Enum.UserInputState.End then
-                        Dragging = false
-                    end
-                end)
-            end
-        end)
-
-        AddConnection(DragPoint.InputChanged, function(Input)
-            if Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch then
-                DragInput = Input
-            end
-        end)
-
-        AddConnection(UserInputService.InputChanged, function(Input)
-            if Input == DragInput and Dragging then
-                local Delta = Input.Position - MousePos
-                Main.Position = UDim2.new(
-                    FramePos.X.Scale, FramePos.X.Offset + Delta.X,
-                    FramePos.Y.Scale, FramePos.Y.Offset + Delta.Y
-                )
-            end
-        end)
-    end)
-end
+				Input.Changed:Connect(function()
+					if Input.UserInputState == Enum.UserInputState.End then
+						Dragging = false
+					end
+				end)
+			end
+		end)
+		DragPoint.InputChanged:Connect(function(Input)
+			if Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch then
+				DragInput = Input
+			end
+		end)
+		UserInputService.InputChanged:Connect(function(Input)
+			if Input == DragInput and Dragging then
+				local Delta = Input.Position - MousePos
+				TweenService:Create(Main, TweenInfo.new(0.45, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Position  = UDim2.new(FramePos.X.Scale,FramePos.X.Offset + Delta.X, FramePos.Y.Scale, FramePos.Y.Offset + Delta.Y)}):Play()
+			end
+		end)
+	end)
+end   
 
 local function Create(Name, Properties, Children)
 	local Object = Instance.new(Name)
@@ -248,7 +241,7 @@ local function SaveCfg(Name)
 	writefile(OrionLib.Folder .. "/" .. Name .. ".txt", tostring(HttpService:JSONEncode(Data)))
 end
 
-local WhitelistedMouse = {Enum.UserInputType.MouseButton1, Enum.UserInputType.MouseButton2,Enum.UserInputType.MouseButton3}
+local WhitelistedMouse = {Enum.UserInputType.MouseButton1, Enum.UserInputType.MouseButton2,Enum.UserInputType.MouseButton3,Enum.UserInputType.Touch}
 local BlacklistedKeys = {Enum.KeyCode.Unknown,Enum.KeyCode.W,Enum.KeyCode.A,Enum.KeyCode.S,Enum.KeyCode.D,Enum.KeyCode.Up,Enum.KeyCode.Left,Enum.KeyCode.Down,Enum.KeyCode.Right,Enum.KeyCode.Slash,Enum.KeyCode.Tab,Enum.KeyCode.Backspace,Enum.KeyCode.Escape}
 
 local function CheckKey(Table, Key)
@@ -649,7 +642,7 @@ function OrionLib:MakeWindow(WindowConfig)
 		WindowIcon.Parent = MainWindow.TopBar
 	end	
 
-	MakeDraggable(DragPoint, MainWindow)
+	AddDraggingFunctionality(DragPoint, MainWindow)
 
 	AddConnection(CloseBtn.MouseButton1Up, function()
 		MainWindow.Visible = false
@@ -1069,13 +1062,13 @@ function OrionLib:MakeWindow(WindowConfig)
 					end 
 				end)
 
-		UserInputService.InputChanged:Connect(function(Input)
-    if Dragging and (Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch) then
-        local SizeScale = math.clamp((Input.Position.X - SliderBar.AbsolutePosition.X) / SliderBar.AbsoluteSize.X, 0, 1)
-        Slider:Set(SliderConfig.Min + ((SliderConfig.Max - SliderConfig.Min) * SizeScale)) 
-        SaveCfg(game.GameId)
-    end
-end)
+				UserInputService.InputChanged:Connect(function(Input)
+					if Dragging then 
+						local SizeScale = math.clamp((Input.Position.X - SliderBar.AbsolutePosition.X) / SliderBar.AbsoluteSize.X, 0, 1)
+						Slider:Set(SliderConfig.Min + ((SliderConfig.Max - SliderConfig.Min) * SizeScale)) 
+						SaveCfg(game.GameId)
+					end
+				end)
 
 				function Slider:Set(Value)
 					self.Value = math.clamp(Round(Value, SliderConfig.Increment), SliderConfig.Min, SliderConfig.Max)
@@ -1572,7 +1565,7 @@ end)
 				ColorV = 1 - (math.clamp(ColorSelection.AbsolutePosition.Y - Color.AbsolutePosition.Y, 0, Color.AbsoluteSize.Y) / Color.AbsoluteSize.Y)
 
 				AddConnection(Color.InputBegan, function(input)
-					if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+					if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 						if ColorInput then
 							ColorInput:Disconnect()
 						end
@@ -1588,7 +1581,7 @@ end)
 				end)
 
 				AddConnection(Color.InputEnded, function(input)
-					if input.UserInputType == Enum.UserInputType.MouseButton1 then
+					if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 						if ColorInput then
 							ColorInput:Disconnect()
 						end
@@ -1596,7 +1589,7 @@ end)
 				end)
 
 				AddConnection(Hue.InputBegan, function(input)
-					if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+					if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 						if HueInput then
 							HueInput:Disconnect()
 						end;
@@ -1613,7 +1606,7 @@ end)
 				end)
 
 				AddConnection(Hue.InputEnded, function(input)
-					if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+					if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 						if HueInput then
 							HueInput:Disconnect()
 						end
@@ -1715,48 +1708,11 @@ end)
 		return ElementFunction   
 	end  
 	
-	--if writefile and isfile then
-	--	if not isfile("NewLibraryNotification1.txt") then
-	--		local http_req = (syn and syn.request) or (http and http.request) or http_request
-	--		if http_req then
-	--			http_req({
-	--				Url = 'http://127.0.0.1:6463/rpc?v=1',
-	--				Method = 'POST',
-	--				Headers = {
-	--					['Content-Type'] = 'application/json',
-	--					Origin = 'https://discord.com'
-	--				},
-	--				Body = HttpService:JSONEncode({
-	--					cmd = 'INVITE_BROWSER',
-	--					nonce = HttpService:GenerateGUID(false),
-	--					args = {code = 'sirius'}
-	--				})
-	--			})
-	--		end
-	--		OrionLib:MakeNotification({
-	--			Name = "UI Library Available",
-	--			Content = "New UI Library Available - Joining Discord (#announcements)",
-	--			Time = 8
-	--		})
-	--		spawn(function()
-	--			local UI = game:GetObjects("rbxassetid://11403719739")[1]
-
-	--			if gethui then
-	--				UI.Parent = gethui()
-	--			elseif syn.protect_gui then
-	--				syn.protect_gui(UI)
-	--				UI.Parent = game.CoreGui
-	--			else
-	--				UI.Parent = game.CoreGui
-	--			end
-
-	--			wait(11)
-
-	--			UI:Destroy()
-	--		end)
-	--		writefile("NewLibraryNotification1.txt","The value for the notification having been sent to you.")
-	--	end
-	--end
+	OrionLib:MakeNotification({
+		Name = "UI Library Upgrade",
+		Content = "New UI Library Available at sirius.menu/discord and sirius.menu/rayfield",
+		Time = 5
+	})
 	
 
 	
@@ -1765,10 +1721,6 @@ end
 
 function OrionLib:Destroy()
 	Orion:Destroy()
-end
-
-function OrionLib:ToggleUi()
-  Orion.Enabled = not Orion.Enabled
 end
 
 return OrionLib
